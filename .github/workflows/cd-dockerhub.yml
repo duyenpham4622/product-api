@@ -1,0 +1,72 @@
+name: Product API - CD to Docker Hub
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  ci-healthcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build and start stack, wait for healthchecks
+        run: docker compose up -d --build --wait --wait-timeout 120
+
+      - name: Show container status
+        run: docker compose ps
+
+      - name: Smoke test API
+        run: |
+          curl -f http://localhost:3000/health
+          curl -f -X POST http://localhost:3000/api/products \
+            -H "Content-Type: application/json" \
+            -d '{"pid":"SMOKE001","pname":"Smoke Test","price":1000,"quantity":1}'
+          curl -f http://localhost:3000/api/products
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Integration tests
+        run: npm run test:integration
+        env:
+          MONGO_URI: mongodb://localhost:27017/productdb_ci
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
+
+  push-to-dockerhub:
+    needs: ci-healthcheck
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/product-api
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+      - name: Build image
+        run: docker build -t "$IMAGE:latest" -t "$IMAGE:${GITHUB_SHA::7}" .
+
+      - name: Push image
+        run: docker push --all-tags "$IMAGE"
