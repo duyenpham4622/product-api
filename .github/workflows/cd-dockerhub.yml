@@ -70,3 +70,22 @@ jobs:
 
       - name: Push image
         run: docker push --all-tags "$IMAGE"
+
+  deploy-local:
+    needs: push-to-dockerhub
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Pull latest image from Docker Hub
+        run: docker compose -p product-api -f docker-compose-prod.yaml pull
+
+      - name: Redeploy and wait for healthchecks
+        run: docker compose -p product-api -f docker-compose-prod.yaml up -d --wait --wait-timeout 120
+
+      - name: Show status
+        run: docker compose -p product-api -f docker-compose-prod.yaml ps
+
+      - name: Verify API on local engine
+        run: curl.exe -f http://localhost:3000/health
