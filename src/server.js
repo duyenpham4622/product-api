@@ -2,11 +2,12 @@ require('dotenv').config();
 const express = require('express');
 const connectDB = require('./config/db');
 const productRoutes = require('./routes/productRoutes');
+const { version } = require('../package.json');
 
 const app = express();
 app.use(express.json());
 
-app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok', version }));
 app.use('/api/products', productRoutes);
 
 // Chỉ kết nối DB và lắng nghe cổng khi file này được chạy trực tiếp.
