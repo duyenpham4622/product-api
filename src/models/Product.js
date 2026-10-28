@@ -2,10 +2,25 @@ const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema(
   {
-    pid: { type: String, required: true, unique: true },
-    pname: { type: String, required: true },
-    price: { type: Number, required: true, min: 0 },
-    quantity: { type: Number, required: true, min: 0 },
+    pid: { 
+      type: String, 
+      required: true, 
+      unique: true 
+    },
+    pname: { 
+      type: String, 
+      required: true 
+    },
+    price: { 
+      type: Number, 
+      required: true, 
+      min: 0 
+    },
+    quantity: { 
+      type: Number, 
+      required: true, 
+      min: 0 
+    },
   },
   { timestamps: true }
 );
