@@ -19,8 +19,8 @@ jobs:
 
       - name: Smoke test API
         run: |
-          curl -f http://localhost:3000/health
-          curl -f -X POST http://localhost:3000/api/products \
+          curl -f http://localhost:3008/health
+          curl -f -X POST http://localhost:3008/api/products \
             -H "Content-Type: application/json" \
             -d '{"pid":"SMOKE001","pname":"Smoke Test","price":1000,"quantity":1}'
           curl -f http://localhost:3000/api/products
